@@ -10,10 +10,13 @@ export default () => ({
     db: process.env.DATABASE_DB,
   },
   S3_BUCKET: {
+    region: 'us-east-1',
     endpoint: process.env.S3_ENDPOINT,
     port: process.env.S3_PORT ? parseInt(process.env.S3_PORT, 10) : 9000,
     accessKey: process.env.S3_ACCESS_KEY,
     secretKey: process.env.S3_SECRET_KEY,
     bucket: process.env.S3_BUCKET,
+    ttl: process.env.S3_TTL ? parseInt(process.env.S3_TTL, 10) : 3600,
+    customEndpoint: process.env.S3_CUSTOM_ENDPOINT || `http://localhost:9000`,
   },
 });

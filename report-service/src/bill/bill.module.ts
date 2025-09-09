@@ -6,12 +6,14 @@ import { Pool } from 'pg';
 import { Bill } from './bill.entity';
 import { BillController } from './bill.controller';
 import { BillService } from './bill.service';
+import { S3Service } from '../s3/s3.service';
 
 @Module({
   imports: [ConfigModule, TypeOrmModule.forFeature([Bill])],
   exports: [TypeOrmModule, 'PG_POOL'],
   controllers: [BillController],
   providers: [
+    S3Service,
     BillService,
     {
       provide: 'PG_POOL',

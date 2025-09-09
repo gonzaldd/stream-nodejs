@@ -11,7 +11,7 @@ export class BillController {
   }
 
   @Get('stream-to-s3')
-  async streamToS3(): Promise<{ fileUrl: string }> {
+  async streamToS3(): Promise<{ fileUrl: string; downloadURL: string }> {
     return await this.billsService.streamBillsToS3();
   }
 

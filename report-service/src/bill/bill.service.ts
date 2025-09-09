@@ -1,25 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Bill } from './bill.entity';
 import { Pool, PoolClient } from 'pg';
 import QueryStream from 'pg-query-stream';
 import { stringify } from 'csv-stringify';
-import { ConfigService } from '@nestjs/config';
-import {
-  S3Client,
-  PutObjectCommand,
-  ObjectCannedACL,
-} from '@aws-sdk/client-s3';
 import { PassThrough } from 'stream';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ConfigService } from '@nestjs/config';
 
+import { Bill } from './bill.entity';
+import { S3Service } from '../s3/s3.service';
 @Injectable()
 export class BillService {
   constructor(
     @Inject('PG_POOL') private readonly pool: Pool,
     @InjectRepository(Bill)
     private billsRepository: Repository<Bill>,
+    private s3Service: S3Service,
     private configService: ConfigService,
   ) {}
 
@@ -47,7 +43,7 @@ export class BillService {
     return await this.billsRepository.save(bill);
   }
 
-  async streamBillsToS3(): Promise<{ fileUrl: string; presignedUrl: string }> {
+  async streamBillsToS3(): Promise<{ fileUrl: string; downloadURL: string }> {
     console.log('Starting to stream bills to Bucket...');
 
     let client: PoolClient | null = null;
@@ -58,10 +54,10 @@ export class BillService {
       }
 
       const query = new QueryStream('SELECT * FROM bill');
-      const dbStream = client.query(query) as unknown as NodeJS.ReadableStream;
-      if (!dbStream) {
-        throw new Error('Failed to create a database stream');
+      if (typeof client.query !== 'function') {
+        throw new Error('Invalid database client: query method not found');
       }
+      const dbStream = client.query(query) as NodeJS.ReadableStream;
 
       const csvStream = stringify();
       const passThrough = new PassThrough();
@@ -71,42 +67,32 @@ export class BillService {
 
       dbStream.pipe(csvStream).pipe(passThrough);
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         passThrough.on('end', resolve);
         passThrough.on('error', reject);
       });
 
       const csvBuffer = Buffer.concat(chunks);
-      const s3Client = new S3Client({
-        region: 'us-east-1',
-        endpoint: `http://${this.configService.get<string>('S3_ENDPOINT')}:${this.configService.get<string>('S3_PORT')}`,
-        forcePathStyle: true,
-        credentials: {
-          accessKeyId: this.configService.get<string>(
-            'S3_ACCESS_KEY',
-          ) as string,
-          secretAccessKey: this.configService.get<string>(
-            'S3_SECRET_KEY',
-          ) as string,
-        },
-      });
+      const key = `bills-${new Date().toISOString()}-${Math.random().toString(36).substring(2, 15)}.csv`;
 
-      const uploadParams = {
-        Bucket: 'reports',
-        Key: `bills-${new Date().toISOString()}-${Math.random().toString(36).substring(2, 15)}.csv`,
-        Body: csvBuffer,
-        ContentType: 'text/csv',
-        ContentLength: csvBuffer.length,
-        ACL: 'public-read' as ObjectCannedACL,
-      };
+      const fileUrl = await this.s3Service.uploadFile(
+        'reports',
+        key,
+        csvBuffer,
+        'text/csv',
+      );
+      const downloadURL = await this.s3Service.getPresignedUrl(
+        'reports',
+        key,
+        this.configService.get<number>('S3_BUCKET.ttl'),
+        this.configService.get<string>('S3_BUCKET.customEndpoint'),
+      );
 
-      await s3Client.send(new PutObjectCommand(uploadParams));
-
-      console.log('Data successfully uploaded to MinIO');
-      return { fileUrl: `reports/${uploadParams.Key}` };
+      console.log('Data successfully uploaded to S3');
+      return { fileUrl, downloadURL };
     } catch (error) {
-      console.error('Error during streaming or uploading to MinIO:', error);
-      throw new Error('Failed to stream bills to MinIO');
+      console.error('Error during streaming or uploading to S3:', error);
+      throw new Error('Failed to stream bills to S3');
     } finally {
       if (client) {
         try {
