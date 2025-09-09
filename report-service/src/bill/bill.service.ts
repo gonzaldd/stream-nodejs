@@ -26,6 +26,7 @@ export class BillService {
     const [data, total] = await this.billsRepository.findAndCount({
       skip,
       take,
+      order: { id: 'DESC' },
     });
     return { data, total };
   }
