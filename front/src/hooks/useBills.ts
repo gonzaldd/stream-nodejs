@@ -11,7 +11,9 @@ type UseBillsReturn = {
   currentPage: number;
   handleNextPage: () => void;
   handlePreviousPage: () => void;
-  loading: boolean; // Include loading in the return type
+  loading: boolean;
+  handleDownload: () => void;
+  downloadFileLoading: boolean;
 };
 
 const useBills = (): UseBillsReturn => {
@@ -20,12 +22,13 @@ const useBills = (): UseBillsReturn => {
     data: [],
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
+  const [downloadFileLoading, setDownloadFileLoading] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Set loading to true before fetching
+      setLoading(true);
       try {
         const skip = (currentPage - 1) * itemsPerPage;
         const response = await fetch(
@@ -36,7 +39,7 @@ const useBills = (): UseBillsReturn => {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
       }
     };
 
@@ -55,7 +58,33 @@ const useBills = (): UseBillsReturn => {
     }
   };
 
-  return { bills, currentPage, handleNextPage, handlePreviousPage, loading }; // Return loading
+  const handleDownload = async () => {
+    setDownloadFileLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:3000/bill/stream-to-s3");
+      const data = await response.json();
+
+      if (data.downloadURL) {
+        window.open(data.downloadURL, "_blank");
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Error downloading file. Please try again.");
+    } finally {
+      setDownloadFileLoading(false);
+    }
+  };
+
+  return {
+    bills,
+    currentPage,
+    handleNextPage,
+    handlePreviousPage,
+    loading,
+    handleDownload,
+    downloadFileLoading,
+  };
 };
 
 export default useBills;

@@ -7,22 +7,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Loader2Icon } from "lucide-react"
+
 import useBills from "@/hooks/useBills";
 
 function App() {
-  const { bills, currentPage, handleNextPage, handlePreviousPage, loading } = useBills();
-
-
-  const handleDownload = () => { };
+  const {
+    bills,
+    currentPage,
+    handleNextPage,
+    handlePreviousPage,
+    loading,
+    handleDownload,
+    downloadFileLoading
+  } = useBills();
 
   return (
     <>
       {loading && bills.data.length === 0 ? (
-        <div className="text-3xl">Loading...</div>
+        <div className="flex flex-row items-center gap-4">
+          <Loader2Icon className="animate-spin" />
+          <div className="text-3xl">Loading...</div>
+        </div>
       ) : (
         <>
           <div className='text-right mb-8'>
-            <Button disabled onClick={handleDownload}>Download all the data</Button>
+            <Button disabled={downloadFileLoading} onClick={handleDownload}>
+              {downloadFileLoading && <Loader2Icon className="animate-spin" />}
+              {`${!downloadFileLoading ? 'Download' : 'Downloading'}`} all the data
+            </Button>
           </div>
           <Table className="w-4xl">
             <TableHeader>
@@ -46,7 +59,7 @@ function App() {
             <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
               Previous
             </Button>
-            <span>Page {currentPage}</span>
+            <span>Page {currentPage} - Total rows {bills.total}</span>
             <Button onClick={handleNextPage} disabled={currentPage * 10 >= bills.total}>
               Next
             </Button>
