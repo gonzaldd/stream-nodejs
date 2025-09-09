@@ -1,4 +1,13 @@
-import { Controller, Get, Delete, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Post,
+  Body,
+  Query,
+  Sse,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { BillService } from './bill.service';
 
 @Controller('bill')
@@ -13,6 +22,22 @@ export class BillController {
   @Get('stream-to-s3')
   async streamToS3(): Promise<{ fileUrl: string; downloadURL: string }> {
     return await this.billsService.streamBillsToS3();
+  }
+
+  @Sse('stream-to-s3-progress')
+  streamToS3WithProgress(): Observable<{ progress: number }> {
+    return new Observable((observer) => {
+      this.billsService
+        .streamBillsToS3WithProgress((progress) => {
+          observer.next({ progress });
+        })
+        .then(() => {
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error);
+        });
+    });
   }
 
   @Get(':id')
