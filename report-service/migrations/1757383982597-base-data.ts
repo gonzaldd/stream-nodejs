@@ -1,5 +1,4 @@
-import typeorm from 'typeorm';
-const { MigrationInterface, QueryRunner } = typeorm;
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class BaseData1757383982597 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -8,7 +7,6 @@ export class BaseData1757383982597 implements MigrationInterface {
 
     // Disable logging
     const originalLogging = queryRunner.connection.options.logging;
-    queryRunner.connection.options.logging = false;
 
     for (let i = 0; i < totalRows / batchSize; i++) {
       const rows: string[] = [];
@@ -22,9 +20,6 @@ export class BaseData1757383982597 implements MigrationInterface {
       const query = `INSERT INTO bill ("userId", amount) VALUES ${rows.join(',')}`;
       await queryRunner.query(query);
     }
-
-    // Restore original logging settings
-    queryRunner.connection.options.logging = originalLogging;
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
