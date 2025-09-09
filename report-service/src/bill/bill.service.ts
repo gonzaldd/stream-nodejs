@@ -10,8 +10,15 @@ export class BillService {
     private billsRepository: Repository<Bill>,
   ) {}
 
-  findAll(): Promise<Bill[]> {
-    return this.billsRepository.find();
+  async findAll(
+    skip: number = 0,
+    take: number = 10,
+  ): Promise<{ data: Bill[]; total: number }> {
+    const [data, total] = await this.billsRepository.findAndCount({
+      skip,
+      take,
+    });
+    return { data, total };
   }
 
   findOne(id: number): Promise<Bill | null> {

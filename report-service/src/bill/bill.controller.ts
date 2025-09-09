@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Post, Body } from '@nestjs/common';
+import { Controller, Get, Delete, Post, Body, Query } from '@nestjs/common';
 import { BillService } from './bill.service';
 
 @Controller('bill')
@@ -6,8 +6,8 @@ export class BillController {
   constructor(private readonly billsService: BillService) {}
 
   @Get()
-  getAll(): any {
-    return this.billsService.findAll();
+  getAll(@Query('skip') skip: number, @Query('take') take: number): any {
+    return this.billsService.findAll(Number(skip) || 0, Number(take) || 10);
   }
 
   @Get(':id')
