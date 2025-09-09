@@ -10,6 +10,11 @@ export class BillController {
     return this.billsService.findAll(Number(skip) || 0, Number(take) || 10);
   }
 
+  @Get('stream-to-s3')
+  async streamToS3(): Promise<{ fileUrl: string }> {
+    return await this.billsService.streamBillsToS3();
+  }
+
   @Get(':id')
   getOne(id: number): any {
     return this.billsService.findOne(id);
