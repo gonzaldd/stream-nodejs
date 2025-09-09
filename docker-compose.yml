@@ -11,7 +11,7 @@ services:
       - NODE_ENV=development
       - DATABASE_HOST=postgres
       - DATABASE_DB=reportdb
-      - DATABSE_PORT=5432
+      - DATABASE_PORT=5432
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=postgres
       - S3_ENDPOINT=minio
@@ -56,6 +56,18 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
 
 volumes:
   pgdata:
