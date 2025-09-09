@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bill } from './bill.entity';
@@ -12,10 +12,12 @@ import {
   ObjectCannedACL,
 } from '@aws-sdk/client-s3';
 import { PassThrough } from 'stream';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class BillService {
   constructor(
+    @Inject('PG_POOL') private readonly pool: Pool,
     @InjectRepository(Bill)
     private billsRepository: Repository<Bill>,
     private configService: ConfigService,
@@ -45,20 +47,12 @@ export class BillService {
     return await this.billsRepository.save(bill);
   }
 
-  async streamBillsToS3(): Promise<{ fileUrl: string }> {
+  async streamBillsToS3(): Promise<{ fileUrl: string; presignedUrl: string }> {
     console.log('Starting to stream bills to Bucket...');
-
-    const pool: Pool = new Pool({
-      user: this.configService.get<string>('DATABASE_USER') || '',
-      host: this.configService.get<string>('DATABASE_HOST') || '',
-      database: this.configService.get<string>('DATABASE_DB') || '',
-      password: this.configService.get<string>('DATABASE_PASSWORD') || '',
-      port: this.configService.get<number>('DATABASE_PORT', 5432) || 5432,
-    });
 
     let client: PoolClient | null = null;
     try {
-      client = await pool.connect();
+      client = await this.pool.connect();
       if (!client) {
         throw new Error('Failed to acquire a database client');
       }
