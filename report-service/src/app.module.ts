@@ -17,7 +17,7 @@ import Config from './configuration/config';
       username: Config().database.user,
       password: Config().database.password,
       database: Config().database.db,
-      synchronize: true,
+      synchronize: false,
       autoLoadEntities: true,
     }),
     BillHttpModule,

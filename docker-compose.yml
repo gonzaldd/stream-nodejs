@@ -49,6 +49,7 @@ services:
         npm install -g pnpm
         pnpm config set store-dir /home/node/.local/share/pnpm/store
         pnpm i
+        pnpm run migration:run
         pnpm run start:dev
     restart: unless-stopped
 

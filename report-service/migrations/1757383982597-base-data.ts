@@ -1,12 +1,9 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { type MigrationInterface, type QueryRunner } from 'typeorm';
 
 export class BaseData1757383982597 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const batchSize = 10000;
     const totalRows = 10_000_000;
-
-    // Disable logging
-    const originalLogging = queryRunner.connection.options.logging;
 
     for (let i = 0; i < totalRows / batchSize; i++) {
       const rows: string[] = [];
