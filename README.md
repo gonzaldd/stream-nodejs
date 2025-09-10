@@ -28,7 +28,10 @@ git clone https://github.com/gonzaldd/stream-nodejs.git
 cd streams-node
 ```
 
-#### 2. Run Docker
+#### 2. Create .env
+Rename .env.example to .env & put your DB credentials
+
+#### 3. Run Docker
 ```
 docker-compose up --build
 ```
